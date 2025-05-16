@@ -1,18 +1,45 @@
 package org.example;
 
+import org.example.Operations.*;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.time.Instant;
 import java.time.Duration;
+import java.util.List;
 
 public class TestPerformance <T> {
-    LinkedList<T> linked;
-    ArrayList<T> array;
-    int n;
-    T[] elements;
-    public TestPerformance() {
-        linked = new LinkedList<>();
-        array = new ArrayList<>();
+    private int n;
+    private T[] elements;
+    private volatile Object sink;
+    private final int TEST_COUNT = 10;
+    private long warmingUp(List<T> list) {
+        long size = 0;
+        Operation<T> action = new AddToHead<>(list, elements, n / 2);
+        for (int i = 0; i < 10; i++)
+            size += action.play();
+        return size;
+    }
+    private Duration timeMeasurement(Operation action, long size) {
+        Instant startTime = Instant.now();
+        size += action.play();
+        Instant endTime = Instant.now();
+        sink = size;
+        return Duration.between(startTime, endTime);
+    }
+    public Duration testOperationOneTime(Operation action, List<T> list) {
+        long size = warmingUp(list);
+        Duration result = timeMeasurement(action, size);
+        sink = size;
+        return result;
+    }
+    public Duration testOperationManyTimes(Operation action, List<T> list) {
+        Duration sum = Duration.ZERO;
+        for (int i = 0; i < TEST_COUNT; i++) {
+            sum = sum.plus(testOperationOneTime(action, list));
+            list.clear();
+        }
+        return sum.dividedBy(TEST_COUNT);
     }
     public void setData(int n, T[] elements) {
         this.n = n;
@@ -22,148 +49,60 @@ public class TestPerformance <T> {
         }
     }
     public Duration addToHeadDurationLinked() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            linked.add(0, elements[i]);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        LinkedList<T> list = new LinkedList<>();
+        return testOperationManyTimes(new AddToHead<>(list, elements, n), list);
     }
     public Duration addToHeadDurationArray() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            array.add(0, elements[i]);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        ArrayList<T> list = new ArrayList<>();
+        return testOperationManyTimes(new AddToHead<>(list, elements, n), list);
     }
     public Duration addToMiddleDurationLinked() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            linked.add(linked.size() / 2, elements[i]);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        LinkedList<T> list = new LinkedList<>();
+        return testOperationManyTimes(new AddToMiddle<>(list, elements, n), list);
     }
     public Duration addToMiddleDurationArray() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            array.add(array.size() / 2, elements[i]);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        ArrayList<T> list = new ArrayList<>();
+        return testOperationManyTimes(new AddToMiddle<>(list, elements, n), list);
     }
     public Duration addToBackDurationLinked() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            linked.add(elements[i]);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        LinkedList<T> list = new LinkedList<>();
+        return testOperationManyTimes(new AddToBack<>(list, elements, n), list);
     }
     public Duration addToBackDurationArray() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            array.add(elements[i]);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        ArrayList<T> list = new ArrayList<>();
+        return testOperationManyTimes(new AddToBack<>(list, elements, n), list);
     }
     public Duration getDurationLinked() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            linked.get(i);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        LinkedList<T> list = new LinkedList<>();
+        return testOperationManyTimes(new Get<>(list, elements, n), list);
     }
     public Duration getDurationArray() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            array.get(i);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        ArrayList<T> list = new ArrayList<>();
+        return testOperationManyTimes(new Get<>(list, elements, n), list);
     }
     public Duration removeFromHeadDurationLinked() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            linked.remove(0);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        LinkedList<T> list = new LinkedList<>();
+        return testOperationManyTimes(new RemoveFromHead<>(list, elements, n), list);
     }
-    public Duration removeFromHeadArray() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            array.remove(0);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+    public Duration removeFromHeadDurationArray() {
+        ArrayList<T> list = new ArrayList<>();
+        return testOperationManyTimes(new RemoveFromHead<>(list, elements, n), list);
     }
     public Duration removeFromMiddleDurationLinked() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            linked.remove(linked.size() - 1);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        LinkedList<T> list = new LinkedList<>();
+        return testOperationManyTimes(new RemoveFromMiddle<>(list, elements, n), list);
     }
     public Duration removeFromMiddleDurationArray() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            array.remove(array.size() - 1);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        ArrayList<T> list = new ArrayList<>();
+        return testOperationManyTimes(new RemoveFromMiddle<>(list, elements, n), list);
     }
     public Duration removeFromBackDurationLinked() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            linked.remove(linked.size() - 1);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
+        LinkedList<T> list = new LinkedList<>();
+        return testOperationManyTimes(new RemoveFromBack<>(list, elements, n), list);
     }
     public Duration removeFromBackDurationArray() {
-        Instant startTime = Instant.now();
-
-        for (int i = 0; i < n; i++)
-            array.remove(array.size() - 1);
-
-        Instant endTime = Instant.now();
-
-        return Duration.between(startTime, endTime);
-    }
-    public void clear() {
-        linked.clear();
-        array.clear();
+        ArrayList<T> list = new ArrayList<>();
+        return testOperationManyTimes(new RemoveFromBack<>(list, elements, n), list);
     }
     public T[] getData() {
         return elements;
