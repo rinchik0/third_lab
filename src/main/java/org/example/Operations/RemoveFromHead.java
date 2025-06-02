@@ -4,6 +4,10 @@ import org.example.Operations.Operation;
 
 import java.util.List;
 
+/**
+ * Класс операции удаления из головы. Наследуется от абстрактного класса операции.
+ * @param <T> тип данных
+ */
 public class RemoveFromHead<T> extends Operation<T> {
     public RemoveFromHead(List<T> list, T[] elements, int n) {
         this.list = list;
